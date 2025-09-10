@@ -1,82 +1,75 @@
+import os
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta, timezone
-import os
-# 🔑 Inserisci il token lungo e l'ID IG
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # 👈 il token ora viene preso da un secret
-IG_USER_ID   = "17841469939432658"
 
-BASE = "https://graph.facebook.com/v23.0"
+# === CONFIGURAZIONE ===
+IG_USER_ID = "17841469939432658"  # ID account Instagram
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # preso da GitHub Secrets
 
-def get_reach_last_30d(ig_user_id, token):
-    """Recupera la reach giornaliera ultimi 30 giorni"""
-    today = datetime.now(timezone.utc).date()
-    since = (today - timedelta(days=30)).isoformat()
-    until = (today - timedelta(days=1)).isoformat()  # fino a ieri
+OUTPUT_DIR = "static"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+CSV_FILE = os.path.join(OUTPUT_DIR, "insight_folignotouch_30d.csv")
+PNG_FILE = os.path.join(OUTPUT_DIR, "reach_30d.png")
+
+
+def fetch_json(url, params):
+    r = requests.get(url, params=params)
+    r.raise_for_status()
+    return r.json()
+
+
+def get_reach_last_30d():
+    url = f"https://graph.facebook.com/v23.0/{IG_USER_ID}/insights"
     params = {
         "metric": "reach",
         "period": "day",
-        "since": since,
-        "until": until,
-        "access_token": token
+        "since": pd.Timestamp.today() - pd.Timedelta(days=30),
+        "until": pd.Timestamp.today(),
+        "access_token": ACCESS_TOKEN,
     }
-    url = f"{BASE}/{ig_user_id}/insights"
-    r = requests.get(url, params=params)
-    r.raise_for_status()
-    js = r.json()
-
-    rows = []
-    for m in js.get("data", []):
-        for v in m.get("values", []):
-            date = v["end_time"][:10]  # YYYY-MM-DD
-            rows.append({"date": date, "reach": v["value"]})
-    df = pd.DataFrame(rows).drop_duplicates(subset=["date"]).sort_values("date")
+    js = fetch_json(url, params)
+    values = js["data"][0]["values"]
+    df = pd.DataFrame(values)
+    df.rename(columns={"end_time": "date"}, inplace=True)
+    df["date"] = pd.to_datetime(df["date"]).dt.date
     return df
 
-def get_followers(ig_user_id, token):
-    """Recupera il numero attuale di followers"""
-    url = f"{BASE}/{ig_user_id}"
-    params = {"fields": "followers_count", "access_token": token}
-    r = requests.get(url, params=params)
-    r.raise_for_status()
-    js = r.json()
-    return js.get("followers_count", None)
+
+def get_follower_count():
+    url = f"https://graph.facebook.com/v23.0/{IG_USER_ID}"
+    params = {
+        "fields": "followers_count",
+        "access_token": ACCESS_TOKEN,
+    }
+    js = fetch_json(url, params)
+    return js.get("followers_count", 0)
+
 
 def main():
-    # 1) Reach ultimi 30 giorni
-    df = get_reach_last_30d(IG_USER_ID, ACCESS_TOKEN)
+    # --- Reach 30 giorni ---
+    df = get_reach_last_30d()
+    df.to_csv(CSV_FILE, index=False)
+    print(f"✅ Salvato {CSV_FILE}")
 
-    # 2) Followers totali attuali
-    followers = get_followers(IG_USER_ID, ACCESS_TOKEN)
+    # --- Numero follower ---
+    followers = get_follower_count()
+    print(f"👥 Follower attuali: {followers}")
 
-    # 3) Salvataggio CSV (reach + followers_count come riga extra)
-    meta_row = pd.DataFrame([{"date": "TOTAL_followers", "reach": followers}])
-    out = pd.concat([meta_row, df], ignore_index=True)
-    out.to_csv("insight_folignotouch_30d.csv", index=False)
-    print("✅ Salvato insight_folignotouch_30d.csv")
+    # --- Grafico ---
+    plt.figure(figsize=(12, 6))
+    plt.plot(df["date"].values, df["value"].values, marker="o", color="blue", label="Reach giornaliera")
+    plt.title(f"Andamento ultimi 30 giorni • @folignotouch\nFollower attuali: {followers}")
+    plt.xlabel("Data")
+    plt.ylabel("Reach")
+    plt.xticks(rotation=45)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(PNG_FILE)
+    plt.close()
+    print(f"📊 Grafico salvato in {PNG_FILE}")
 
-    # 4) Grafico
-    if not df.empty:
-        plt.figure(figsize=(10, 6))
-        plt.plot(df["date"], df["reach"], marker="o", label="Reach giornaliera")
-        plt.title("Reach ultimi 30 giorni • @folignotouch")
-        plt.xlabel("Data")
-        plt.ylabel("Reach")
-        plt.xticks(rotation=45, ha="right")
-        plt.legend()
-
-        # Annotazione follower totali
-        if followers:
-            plt.suptitle(f"Follower attuali: {followers}", y=0.97, fontsize=9)
-
-        plt.tight_layout()
-        plt.savefig("reach_30d_folignotouch.png", dpi=150)
-        plt.show()
-        print("✅ Grafico salvato: reach_30d_folignotouch.png")
-    else:
-        print("⚠️ Nessun dato reach negli ultimi 30 giorni.")
 
 if __name__ == "__main__":
     main()
