@@ -2,9 +2,9 @@ import requests
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta, timezone
-
+import os
 # 🔑 Inserisci il token lungo e l'ID IG
-ACCESS_TOKEN = "EAAUaU12LZA7ABPULZAguUvtlBlrll0sAB8rzof7bSr9V40ZBZCRzBISvxhOAQB4obOpcNDJ05VUbnwW3Jmr2w88wo0msjEUXCD5z2G0F346qyCqezavanNBZAEZBx7K0DtyleKAeIKAMZA08L7d56XTlBqUEIQAyfb1zEFR5VvZCug7NKL7zVdfAZCG5m12rrPuuQ4V9CNaoOZBd86T3MJjXAyQc56aVAu5imOXnmdKZCVPxiIOoAybQKce3uDqUp0V"
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # 👈 il token ora viene preso da un secret
 IG_USER_ID   = "17841469939432658"
 
 BASE = "https://graph.facebook.com/v23.0"
