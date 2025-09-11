@@ -1,0 +1,23 @@
+name: Test FTP Deploy
+
+on:
+  workflow_dispatch:   # avvio manuale
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server:   ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps   # prova con 'ftp' se Aruba non supporta FTPS
+          port: 21
+          local-dir: static/
+          server-dir: /insight/
+          log-level: verbose
