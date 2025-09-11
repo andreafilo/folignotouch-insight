@@ -2,7 +2,7 @@ import os
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 # === CONFIGURAZIONE ===
 IG_USER_ID = "17841469939432658"  # ID account Instagram
@@ -18,9 +18,8 @@ def fetch_json(url, params):
     return r.json()
 
 def get_reach_last_30d():
-    # Intervallo ultimi 30 giorni (in UTC, aggiornato per evitare DeprecationWarning)
-    since = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
-    until = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    since = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+    until = datetime.utcnow().strftime("%Y-%m-%d")
 
     url = f"{BASE}/{IG_USER_ID}/insights"
     params = {
@@ -49,34 +48,30 @@ def get_follower_count():
 
 def main():
     df = get_reach_last_30d()
+
+    # Aggiungi colonna con timestamp aggiornamento
+    df["last_update"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
     df.to_csv(CSV_FILE, index=False)
     print(f"✅ Salvato {CSV_FILE}")
 
     followers = get_follower_count()
     print(f"👥 Follower attuali: {followers}")
 
-    # Grafico con riquadro follower
+    # Grafico
     plt.figure(figsize=(14, 6))
     plt.plot(df["date"], df["reach"], marker="o", color="blue", label="Reach giornaliera")
     plt.grid(True, linestyle="--", alpha=0.6)
 
-    # Etichette asse X: tutte le date, primo del mese in grassetto
     ax = plt.gca()
-    labels = []
-    for d in df["date"]:
-        if d.endswith("-01"):  # primo giorno del mese
-            labels.append(f"$\\bf{{{d}}}$")
-        else:
-            labels.append(d)
-
     ax.set_xticks(range(len(df["date"])))
-    ax.set_xticklabels(labels, rotation=90, fontsize=8)
+    ax.set_xticklabels(df["date"], rotation=90, fontsize=8)
 
     plt.title("Andamento Reach ultimi 30 giorni", fontsize=14)
     plt.xlabel("Data", fontsize=10)
     plt.ylabel("Reach", fontsize=10)
 
-    # Riquadro con numero follower
+    # Riquadro follower
     text_box = f"Follower attuali: {followers}"
     ax.text(
         0.98, 0.95, text_box,
