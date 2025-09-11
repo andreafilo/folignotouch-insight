@@ -3,7 +3,7 @@ name: Update Instagram Insights
 on:
   workflow_dispatch:          # avvio manuale
   schedule:
-    - cron: '0 6 * * *'       # ogni giorno alle 06:00 UTC (07/08 italiane, a seconda dell'ora legale)
+    - cron: '0 6 * * *'       # ogni giorno alle 06:00 UTC (07/08 italiane)
 
 permissions:
   contents: write
@@ -40,11 +40,20 @@ jobs:
           git commit -m "Update insights and chart [skip ci]"
           git push
 
+      # 👇 AGGIUNTO: carichiamo i file come artifact
+      - name: Upload artifacts for deploy
+        uses: actions/upload-artifact@v4
+        with:
+          name: insight-files
+          path: |
+            static/insight_folignotouch_30d.csv
+            static/reach_30d.png
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Scarica artifact generati
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: insight-files
