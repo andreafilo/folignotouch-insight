@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 # === CONFIGURAZIONE ===
 IG_USER_ID = "17841469939432658"  # ID account Instagram
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # token salvato come variabile d'ambiente
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # preso da variabile d'ambiente GitHub
 BASE = "https://graph.facebook.com/v23.0"
 
 CSV_FILE = "static/insight_folignotouch_30d.csv"
@@ -39,26 +39,20 @@ def get_reach_last_30d():
 
 def get_follower_count():
     url = f"{BASE}/{IG_USER_ID}"
-    params = {
-        "fields": "followers_count",
-        "access_token": ACCESS_TOKEN
-    }
+    params = {"fields": "followers_count", "access_token": ACCESS_TOKEN}
     js = fetch_json(url, params)
     return js.get("followers_count", 0)
 
 def main():
+    # === Ottieni dati ===
     df = get_reach_last_30d()
-
-    # Aggiungi colonna con timestamp aggiornamento
-    df["last_update"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
     df.to_csv(CSV_FILE, index=False)
     print(f"✅ Salvato {CSV_FILE}")
 
     followers = get_follower_count()
     print(f"👥 Follower attuali: {followers}")
 
-    # Grafico
+    # === Grafico ===
     plt.figure(figsize=(14, 6))
     plt.plot(df["date"], df["reach"], marker="o", color="blue", label="Reach giornaliera")
     plt.grid(True, linestyle="--", alpha=0.6)
@@ -72,13 +66,13 @@ def main():
     plt.ylabel("Reach", fontsize=10)
 
     # Riquadro follower
-    text_box = f"Follower attuali: {followers}"
     ax.text(
-        0.98, 0.95, text_box,
+        0.98, 0.95,
+        f"Follower attuali: {followers}",
         transform=ax.transAxes,
         fontsize=10,
-        verticalalignment='top',
-        horizontalalignment='right',
+        verticalalignment="top",
+        horizontalalignment="right",
         bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3")
     )
 
