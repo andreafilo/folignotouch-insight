@@ -5,11 +5,18 @@ on:
   schedule:
     - cron: "0 6 * * *" # ogni giorno alle 6:00 UTC
 
+permissions:
+  contents: write
+  
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+    - uses: actions/checkout@v4
+        with:
+        fetch-depth: 0
+    
+    - name: Checkout repo
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
