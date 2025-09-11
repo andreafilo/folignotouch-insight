@@ -12,9 +12,6 @@ BASE = "https://graph.facebook.com/v23.0"
 CSV_FILE = "static/insight_folignotouch_30d.csv"
 IMG_FILE = "static/reach_30d.png"
 
-df.to_csv(CSV_FILE, index=False)
-plt.savefig(IMG_FILE)
-
 def fetch_json(url, params):
     r = requests.get(url, params=params)
     r.raise_for_status()
