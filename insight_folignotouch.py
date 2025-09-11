@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 # === CONFIGURAZIONE ===
 IG_USER_ID = "17841469939432658"  # ID account Instagram
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # preso da variabile d'ambiente GitHub
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # token salvato come variabile d'ambiente
 BASE = "https://graph.facebook.com/v23.0"
 
 CSV_FILE = "static/insight_folignotouch_30d.csv"
@@ -39,12 +39,14 @@ def get_reach_last_30d():
 
 def get_follower_count():
     url = f"{BASE}/{IG_USER_ID}"
-    params = {"fields": "followers_count", "access_token": ACCESS_TOKEN}
+    params = {
+        "fields": "followers_count",
+        "access_token": ACCESS_TOKEN
+    }
     js = fetch_json(url, params)
     return js.get("followers_count", 0)
 
 def main():
-    # === Ottieni dati ===
     df = get_reach_last_30d()
     df.to_csv(CSV_FILE, index=False)
     print(f"✅ Salvato {CSV_FILE}")
@@ -52,7 +54,7 @@ def main():
     followers = get_follower_count()
     print(f"👥 Follower attuali: {followers}")
 
-    # === Grafico ===
+    # === Genera grafico PNG ===
     plt.figure(figsize=(14, 6))
     plt.plot(df["date"], df["reach"], marker="o", color="blue", label="Reach giornaliera")
     plt.grid(True, linestyle="--", alpha=0.6)
@@ -71,13 +73,13 @@ def main():
         f"Follower attuali: {followers}",
         transform=ax.transAxes,
         fontsize=10,
-        verticalalignment="top",
-        horizontalalignment="right",
+        verticalalignment='top',
+        horizontalalignment='right',
         bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3")
     )
 
     plt.tight_layout()
-    plt.savefig(IMG_FILE)
+    plt.savefig(IMG_FILE)  # 🔴 salva SEMPRE il grafico
     plt.close()
     print(f"📊 Grafico salvato in {IMG_FILE}")
 
