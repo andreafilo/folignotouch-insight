@@ -1,9 +1,7 @@
 name: Update Instagram Insights
 
 on:
-  workflow_dispatch:   # puoi avviarlo manualmente
-  schedule:
-    - cron: "0 6 * * *"   # ogni giorno alle 6:00 UTC (08:00 italiane)
+  workflow_dispatch:
 
 jobs:
   build:
