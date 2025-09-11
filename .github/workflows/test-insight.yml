@@ -3,10 +3,10 @@ name: Update Instagram Insights
 on:
   workflow_dispatch:          # avvio manuale
   schedule:
-    - cron: '0 6 * * *'       # ogni giorno alle 06:00 UTC (07/08:00 italiane, a seconda dell'ora legale)
+    - cron: '0 6 * * *'       # ogni giorno alle 06:00 UTC (07/08 italiane, a seconda dell'ora legale)
 
 permissions:
-  contents: write             # serve per committare nel repo dal job "build"
+  contents: write
 
 jobs:
   build:
@@ -40,20 +40,11 @@ jobs:
           git commit -m "Update insights and chart [skip ci]"
           git push
 
-      # Passiamo i file al job di deploy come artifact
-      - name: Upload artifacts for deploy
-        uses: actions/upload-artifact@v4
-        with:
-          name: insight-files
-          path: |
-            static/insight_folignotouch_30d.csv
-            static/reach_30d.png
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
+      - name: Scarica artifact generati
         uses: actions/download-artifact@v4
         with:
           name: insight-files
@@ -65,9 +56,9 @@ jobs:
           server:   ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps            # se FTPS non è disponibile, metti 'ftp'
+          protocol: ftps
           port: 21
           local-dir:  deploy/
-          server-dir: /insight/     # cartella pubblica sul server
+          server-dir: /www.hocstudio.it/insight/
           timeout: 120000
           log-level: standard
